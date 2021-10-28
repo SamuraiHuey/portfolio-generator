@@ -1,6 +1,6 @@
 const inquirer = require('inquirer');
-const fs = require('fs');
 const generatePage = require('./src/page-template.js');
+const { writeFile, copyFile } = require('./utils/generate-site.js');
 
 const promptUser = () => {
     return inquirer.prompt([
@@ -9,7 +9,7 @@ const promptUser = () => {
             name: 'name',
             message: 'What is your name? (Required)',
             validate: nameInput => {
-                if (nameInput){
+                if (nameInput) {
                     return true;
                 } else {
                     console.log('Please enter your name!')
@@ -22,7 +22,7 @@ const promptUser = () => {
             name: 'github',
             message: 'Enter your Github Username (Required)',
             validate: githubInput => {
-                if (githubInput){
+                if (githubInput) {
                     return true;
                 } else {
                     console.log('Please enter your Github Username!')
@@ -40,7 +40,7 @@ const promptUser = () => {
             type: 'input',
             name: 'about',
             message: 'Provide some information about yourself:',
-            when: ({confirmAbout}) => {
+            when: ({ confirmAbout }) => {
                 if (confirmAbout) {
                     return true;
                 } else {
@@ -57,86 +57,93 @@ const promptProject = portfolioData => {
 Add a New Project
 =================
 `);
-if (!portfolioData.projects) {
+    if (!portfolioData.projects) {
         portfolioData.projects = [];
     }
-return inquirer.prompt([
-    {
-        type: 'input',
-        name: 'name',
-        message: 'What is the name of your project? (Required)',
-        validate: nameInput => {
-            if (nameInput){
-                return true;
-            } else {
-                console.log('Please enter your name!')
-                return false;
+    return inquirer.prompt([
+        {
+            type: 'input',
+            name: 'name',
+            message: 'What is the name of your project? (Required)',
+            validate: nameInput => {
+                if (nameInput) {
+                    return true;
+                } else {
+                    console.log('Please enter your name!')
+                    return false;
+                }
             }
-        }
-    },
-    {
-        type: 'input',
-        name: 'description',
-        message: 'Provide a description of the project (Required)',
-        validate: descriptionInput => {
-            if (descriptionInput){
-                return true;
-            } else {
-                console.log('Please enter a project description!')
-                return false;
+        },
+        {
+            type: 'input',
+            name: 'description',
+            message: 'Provide a description of the project (Required)',
+            validate: descriptionInput => {
+                if (descriptionInput) {
+                    return true;
+                } else {
+                    console.log('Please enter a project description!')
+                    return false;
+                }
             }
-        }
-    },
-    {
-        type: 'checkbox',
-        name: 'languages',
-        message: 'What did you build this project with? (check all that apply)',
-        choices: ['Javascript', 'HTML', 'CSS', 'ES6', 'jQuery', 'Bootstrap', 'Node']
-    },
-    {
-        type: 'input',
-        name: 'link',
-        message: 'Enter the GitHub link to your project (Required)',
-        validate: linkInput => {
-            if (linkInput){
-                return true;
-            } else {
-                console.log('Please provide a link to your project!')
-                return false;
+        },
+        {
+            type: 'checkbox',
+            name: 'languages',
+            message: 'What did you build this project with? (check all that apply)',
+            choices: ['Javascript', 'HTML', 'CSS', 'ES6', 'jQuery', 'Bootstrap', 'Node']
+        },
+        {
+            type: 'input',
+            name: 'link',
+            message: 'Enter the GitHub link to your project (Required)',
+            validate: linkInput => {
+                if (linkInput) {
+                    return true;
+                } else {
+                    console.log('Please provide a link to your project!')
+                    return false;
+                }
             }
+        },
+        {
+            type: 'confirm',
+            name: 'feature',
+            message: 'Would you like to feature this project?',
+            default: false
+        },
+        {
+            type: 'confirm',
+            name: 'confirmAddProject',
+            message: 'Would you like to enter another project?',
+            default: false
         }
-    },
-    {
-        type: 'confirm',
-        name: 'feature',
-        message: 'Would you like to feature this project?',
-        default: false
-    },
-    {
-        type: 'confirm',
-        name: 'confirmAddProject',
-        message: 'Would you like to enter another project?',
-        default: false
-    }
-])
-.then(projectData => {
-    portfolioData.projects.push(projectData);
-    if (projectData.confirmAddProject) {
-        return promptProject(portfolioData);
-    } else {
-        return portfolioData;
-    }
-});
+    ])
+        .then(projectData => {
+            portfolioData.projects.push(projectData);
+            if (projectData.confirmAddProject) {
+                return promptProject(portfolioData);
+            } else {
+                return portfolioData;
+            }
+        });
 
 };
 promptUser()
     .then(promptProject)
     .then(portfolioData => {
-        const pageHTML = generatePage(portfolioData);
-
-    fs.writeFile('./index.html', pageHTML, err => {
-      if (err) throw new Error(err);
-
-      console.log('Page created! Check out index.html in this directory to see it!');
-    });
+        return generatePage(portfolioData);
+    })
+    .then(pageHTML => {
+        return writeFile(pageHTML);
+    })
+    .then(writeFileResponse => {
+        console.log(writeFileResponse);
+        return copyFile();
+    })
+    .then(copyFileResponse => {
+        console.log(copyFileResponse);
+    })
+    .catch(err => {
+        console.log(err);
     });
